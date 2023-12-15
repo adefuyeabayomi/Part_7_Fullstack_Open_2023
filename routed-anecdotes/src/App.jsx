@@ -1,26 +1,69 @@
 import { useState } from 'react'
+import {BrowserRouter as Router, Routes, Route , Link, useMatch, useNavigate } from "react-router-dom";
 
-const Menu = () => {
+
+const Menu = (props) => {
+  let {anecdotes, addNew , vote } = props;
   const padding = {
     paddingRight: 5
   }
   return (
+    <Router>
+      
+      <div>
+        <Link to={"/"} >Home</Link>
+        <Link to={"/about"}> About</Link>
+        <Link to={"/create-new"}>Create Anecdote</Link>
+      </div>
+      <Routes>
+        <Route path={"/"} element={<Home anecdotes={anecdotes} />}></Route>
+        <Route path={"/about"} element={<About />}></Route>
+        <Route path={"/create-new"} element={<CreateNew addNew={addNew} />} ></Route>
+        <Route path={"/anecdote/:id"} element={<Anec anecdotes={anecdotes} />}></Route>
+      </Routes> 
+    </Router>
+  )
+}
+
+const Anec = ({anecdotes}) =>{
+  let match= useMatch("anecdote/:id")
+  let anecdote = anecdotes.find(n=>{
+    return Number(n.id) === Number(match.params.id)
+  })
+  console.log("anecdote",anecdote, anecdotes)
+  return (
     <div>
-      <a href='#' style={padding}>anecdotes</a>
-      <a href='#' style={padding}>create new</a>
-      <a href='#' style={padding}>about</a>
+      <h3>
+        [Selected Anecdote] : {anecdote.content}
+      </h3>
     </div>
   )
 }
 
-const AnecdoteList = ({ anecdotes }) => (
+const Home = (props) => {
+  return (
+    <div>
+      <AnecdoteList anecdotes={props.anecdotes} />
+    </div>
+  )
+}
+
+const AnecdoteList = ({ anecdotes }) => {
+  
+  let linkedAnecdotes = anecdotes.map(anecdote=>{
+    <li key={anecdote.id}> {
+      <Link to={"/anecdote/:id"}>anecdote.content</Link>
+    } </li>
+  })
+  return (
   <div>
     <h2>Anecdotes</h2>
     <ul>
-      {anecdotes.map(anecdote => <li key={anecdote.id} >{anecdote.content}</li>)}
+      {anecdotes.map(anecdote=> <li key={anecdote.id}>{<Link to={`/anecdote/${anecdote.id}`}>{anecdote.content}</Link>}</li>)}
     </ul>
   </div>
-)
+  )
+}
 
 const About = () => (
   <div>
@@ -45,6 +88,7 @@ const Footer = () => (
 )
 
 const CreateNew = (props) => {
+  let nav = useNavigate()
   const [content, setContent] = useState('')
   const [author, setAuthor] = useState('')
   const [info, setInfo] = useState('')
@@ -58,6 +102,10 @@ const CreateNew = (props) => {
       info,
       votes: 0
     })
+    setAuthor("");
+    setContent("");
+    setInfo("");
+    nav("/")
   }
 
   return (
@@ -82,6 +130,13 @@ const CreateNew = (props) => {
   )
 
 }
+const Notification = ({message}) => {
+  return (
+    <div>
+      {message}
+    </div>
+  )
+}
 
 const App = () => {
   const [anecdotes, setAnecdotes] = useState([
@@ -100,14 +155,15 @@ const App = () => {
       id: 2
     }
   ])
-
   const [notification, setNotification] = useState('')
-
   const addNew = (anecdote) => {
     anecdote.id = Math.round(Math.random() * 10000)
     setAnecdotes(anecdotes.concat(anecdote))
+    setNotification(`[NEW ANECDOTE] ${anecdote.content}`)
+    setTimeout(()=>{
+      setNotification(``)
+    },4000)
   }
-
   const anecdoteById = (id) =>
     anecdotes.find(a => a.id === id)
 
@@ -121,14 +177,11 @@ const App = () => {
 
     setAnecdotes(anecdotes.map(a => a.id === id ? voted : a))
   }
-
   return (
     <div>
       <h1>Software anecdotes</h1>
-      <Menu />
-      <AnecdoteList anecdotes={anecdotes} />
-      <About />
-      <CreateNew addNew={addNew} />
+      <Notification message={notification}/>
+      <Menu anecdotes={anecdotes} addNew={addNew} vote={vote} />
       <Footer />
     </div>
   )
